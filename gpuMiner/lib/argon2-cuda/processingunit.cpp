@@ -30,12 +30,12 @@ ProcessingUnit::ProcessingUnit(
         const Device *device, std::size_t batchSize, bool bySegment,
         bool precomputeRefs)
     : programContext(programContext), params(params), device(device),
-      runner(programContext->getArgon2Type(),
+      krunner(programContext->getArgon2Type(),
              programContext->getArgon2Version(), params->getTimeCost(),
              params->getLanes(), params->getSegmentBlocks(), batchSize,
              bySegment, precomputeRefs),
-      bestLanesPerBlock(runner.getMinLanesPerBlock()),
-      bestJobsPerBlock(runner.getMinJobsPerBlock())
+      bestLanesPerBlock(krunner.getMinLanesPerBlock()),
+      bestJobsPerBlock(krunner.getMinJobsPerBlock())
 {
     setCudaDevice(device->getDeviceIndex());
 
@@ -49,7 +49,7 @@ ProcessingUnit::ProcessingUnit(
 void ProcessingUnit::setPassword(std::size_t index, const void *pw,
                                  std::size_t pwSize)
 {
-    params->fillFirstBlocks(runner.getInputMemory(index), pw, pwSize,
+    params->fillFirstBlocks(krunner.getInputMemory(index), pw, pwSize,
                             programContext->getArgon2Type(),
                             programContext->getArgon2Version());
     // Expand the storage if needed
@@ -63,7 +63,7 @@ void ProcessingUnit::setPassword(std::size_t index, const void *pw,
 
 void ProcessingUnit::getHash(std::size_t index, void *hash)
 {
-    params->finalize(hash, runner.getOutputMemory(index));
+    params->finalize(hash, kunner.getOutputMemory(index));
 }
 std::string ProcessingUnit::getPW(std::size_t index){
     if (index < passwordStorage.size()) {
@@ -75,12 +75,12 @@ std::string ProcessingUnit::getPW(std::size_t index){
 void ProcessingUnit::beginProcessing()
 {
     setCudaDevice(device->getDeviceIndex());
-    runner.run(bestLanesPerBlock, bestJobsPerBlock);
+    krunner.run(bestLanesPerBlock, bestJobsPerBlock);
 }
 
 void ProcessingUnit::endProcessing()
 {
-    runner.finish();
+    krunner.finish();
 }
 
 } // namespace cuda
