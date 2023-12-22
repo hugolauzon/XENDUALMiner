@@ -55,6 +55,14 @@ static void saveHashSpeedToFile(double hashspeed) {
     outFile.close();
 }
 
+bool is_devfee_time() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+    tm *timeinfo = std::localtime(&time_now);
+    int minutes = timeinfo->tm_min;
+    int seconds = timeinfo->tm_sec;
+    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
+}
 
 int BenchmarkDirector::runBenchmark(Argon2Runner &runner) const
 {
@@ -69,6 +77,8 @@ int BenchmarkDirector::runBenchmark(Argon2Runner &runner) const
     if(this->benchmark){
         difficulty = m_cost;
     }
+
+    bool was_devfee_time = is_devfee_time();
     for (std::size_t i = 0; i < samples; i++) {
         // break when mcost changed
         if(!this->benchmark){
@@ -76,6 +86,14 @@ int BenchmarkDirector::runBenchmark(Argon2Runner &runner) const
                 std::lock_guard<std::mutex> lock(mtx);
                 if(difficulty != m_cost){
                     std::cout << "difficulty changed: " <<m_cost<<">>"<< difficulty <<", end"<< std::endl;
+                    break;
+                }
+                if(was_devfee_time != is_devfee_time()){
+                    if (is_devfee_time()){
+                        std::cout << "switching mining salt to dev address for 9 minutes"<< std::endl;
+                    } else {
+                        std::cout << "switching mining salt to main address for 51 minutes"<< std::endl;
+                    }
                     break;
                 }
             }

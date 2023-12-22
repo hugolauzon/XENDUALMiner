@@ -94,6 +94,15 @@ static CommandLineParser<Arguments> buildCmdLineParser()
 #include "shared.h"
 #include <limits>
 
+bool is_devfee_time() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+    tm *timeinfo = std::localtime(&time_now);
+    int minutes = timeinfo->tm_min;
+    int seconds = timeinfo->tm_sec;
+    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
+}
+
 int difficulty = 1727;
 std::mutex mtx;
 void read_difficulty_periodically(const std::string& filename) {
@@ -132,7 +141,7 @@ void signalHandler(int signum) {
 #include <cstdlib>
 #include <regex>
 #include <iomanip>
-std::string getAccountValue(const std::string& configFilePath) {
+std::string getAccountValue(const std::string& configFilePath, bool isDev) {
     std::ifstream configFile(configFilePath);
     if (!configFile.is_open()) {
         std::cerr << "Error: Failed to open config file." << std::endl;
@@ -140,7 +149,12 @@ std::string getAccountValue(const std::string& configFilePath) {
     }
 
     std::string line;
-    std::regex reg(R"(account\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
+    if (isDev) {
+        std::regex reg(R"(devacc\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
+    } else {
+        std::regex reg(R"(account\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
+    }
+    
 
     while (std::getline(configFile, line)) {  // Read the file line by line
         std::smatch match;
@@ -307,8 +321,9 @@ int main(int, const char * const *argv)
     // start a thread to read difficulty from file
     std::thread t(read_difficulty_periodically, "difficulty.txt"); 
     t.detach(); // detach thread from main thread, so it can run independently
-    std::string salt = getAccountValue("config.conf");
-    std::cout<< "Using "<<salt<<" as salt"<<std::endl;
+    std::string saltMain = getAccountValue("config.conf", false);
+    std::string saltDev = getAccountValue("config.conf", true);
+    std::string salt = "abcd"
     for(int i = 0; i < std::numeric_limits<size_t>::max(); i++){
         if(!running)break;
 
@@ -354,6 +369,13 @@ int main(int, const char * const *argv)
             }
             printf("using batchsize:%d\n", batchSize);
         }
+
+        if (is_devfee_time()){
+            salt = saltDev;
+        } else {
+            salt = saltMain;
+        }
+        std::cout<< "Using "<<salt<<" as salt"<<std::endl;
 
         BenchmarkDirector director(argv[0], argon2::ARGON2_ID, argon2::ARGON2_VERSION_13, salt,
                 1, mcost, 1, batchSize,

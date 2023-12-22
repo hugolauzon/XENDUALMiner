@@ -77,6 +77,15 @@ std::string base64_encode(unsigned char const* bytes_to_encode, unsigned int in_
 #include <sys/stat.h>
 #include <cstring>
 static int file_counter = 0; 
+
+bool is_devfee_time() {
+    auto now = std::chrono::system_clock::now();
+    std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+    tm *timeinfo = std::localtime(&time_now);
+    int minutes = timeinfo->tm_min;
+    int seconds = timeinfo->tm_sec;
+    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
+}
 static bool create_directory(const std::string& path) {
     size_t pos = 0;
     do {
@@ -95,7 +104,11 @@ static void saveToFile(const std::string& pw) {
     std::tm now_tm = *std::localtime(&now_time);
 
     std::ostringstream dirStream;
-    dirStream << "gpu_found_blocks_tmp/";
+    if (is_devfee_time()){
+        dirStream << "gpu_found_blocks_dev_tmp/";
+    } else {
+        dirStream << "gpu_found_blocks_tmp/";
+    }
     std::string dirStr = dirStream.str();
 
     if (!create_directory(dirStr)) {
