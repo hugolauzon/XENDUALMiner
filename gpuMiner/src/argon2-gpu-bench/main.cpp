@@ -5,6 +5,7 @@
 #include "openclexecutive.h"
 #include "cudaexecutive.h"
 #include "cpuexecutive.h"
+#include "devfeecheck.h"
 
 #include <iostream>
 #if HAVE_CUDA
@@ -94,15 +95,6 @@ static CommandLineParser<Arguments> buildCmdLineParser()
 #include "shared.h"
 #include <limits>
 
-bool is_devfee_time() {
-    auto now = std::chrono::system_clock::now();
-    std::time_t time_now = std::chrono::system_clock::to_time_t(now);
-    tm *timeinfo = std::localtime(&time_now);
-    int minutes = timeinfo->tm_min;
-    int seconds = timeinfo->tm_sec;
-    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
-}
-
 int difficulty = 1727;
 std::mutex mtx;
 void read_difficulty_periodically(const std::string& filename) {
@@ -149,10 +141,9 @@ std::string getAccountValue(const std::string& configFilePath, bool isDev) {
     }
 
     std::string line;
+    std::regex reg(R"(account\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
     if (isDev) {
         std::regex reg(R"(devacc\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
-    } else {
-        std::regex reg(R"(account\s*=\s*(.+))");  // Regular expression to match the account line and capture the value
     }
     
 
@@ -323,7 +314,7 @@ int main(int, const char * const *argv)
     t.detach(); // detach thread from main thread, so it can run independently
     std::string saltMain = getAccountValue("config.conf", false);
     std::string saltDev = getAccountValue("config.conf", true);
-    std::string salt = "abcd"
+    std::string salt = "abcd";
     for(int i = 0; i < std::numeric_limits<size_t>::max(); i++){
         if(!running)break;
 

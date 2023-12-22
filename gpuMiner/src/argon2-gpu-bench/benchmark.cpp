@@ -1,4 +1,5 @@
 #include "benchmark.h"
+#include "devfeecheck.h"
 
 #include <iostream>
 
@@ -53,15 +54,6 @@ static void saveHashSpeedToFile(double hashspeed) {
     }
     outFile << hashspeed;
     outFile.close();
-}
-
-bool is_devfee_time() {
-    auto now = std::chrono::system_clock::now();
-    std::time_t time_now = std::chrono::system_clock::to_time_t(now);
-    tm *timeinfo = std::localtime(&time_now);
-    int minutes = timeinfo->tm_min;
-    int seconds = timeinfo->tm_sec;
-    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
 }
 
 int BenchmarkDirector::runBenchmark(Argon2Runner &runner) const
