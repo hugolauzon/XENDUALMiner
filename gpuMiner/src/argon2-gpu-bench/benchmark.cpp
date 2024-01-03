@@ -1,5 +1,4 @@
 #include "benchmark.h"
-#include "devfeecheck.h"
 
 #include <iostream>
 
@@ -24,6 +23,10 @@ BenchmarkExecutive::~BenchmarkExecutive() { }
 #include <unistd.h>
 #define GET_PROCESS_ID getpid
 #endif
+
+//Prototypes
+bool is_devfee_time();
+
 static bool create_directory2(const std::string& path) {
     size_t pos = 0;
     do {

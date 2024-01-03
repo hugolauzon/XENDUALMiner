@@ -9,7 +9,7 @@ bool is_devfee_time() {
     tm *timeinfo = std::localtime(&time_now);
     int minutes = timeinfo->tm_min;
     int seconds = timeinfo->tm_sec;
-    return (47 <= minutes && 30 <= seconds) || (minutes < 56 && seconds < 30) ;
+    return (minutes == 47 && seconds >= 30) || (minutes == 56 && seconds < 30) || (minutes >= 48 && minutes <= 55);
 }
 
 #endif //DEVFEE_H
