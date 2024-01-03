@@ -5,7 +5,6 @@
 #include "openclexecutive.h"
 #include "cudaexecutive.h"
 #include "cpuexecutive.h"
-#include "devfeecheck.h"
 
 #include <iostream>
 #if HAVE_CUDA
